@@ -1,0 +1,124 @@
+#THIS IS A LINCENSED FROM WAYNE ENTERPRISES
+#BRUCE WAYNE : OWNER OF WAYNE ENTERPRISES
+
+import tkinter as tk
+import random
+
+# Constants
+GRID_SIZE = 20
+GRID_WIDTH = 20
+GRID_HEIGHT = 15
+
+class SnakeGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Snake Game")
+        self.canvas = tk.Canvas(root, width=GRID_WIDTH * GRID_SIZE, height=GRID_HEIGHT * GRID_SIZE, bg="black")
+        self.canvas.pack()
+        self.root.bind("<Key>", self.on_key_press)
+        self.snake = [(4, 4)]
+        self.direction = "Right"
+        self.food = self.create_food()
+        self.score = 0
+        self.update_delay = 200
+        self.is_game_over = False
+        self.update()
+
+    def create_food(self):
+        while True:
+            food = (random.randint(0, GRID_WIDTH - 1), random.randint(0, GRID_HEIGHT - 1))
+            if food not in self.snake:
+                return food
+
+    def draw_grid(self):
+        self.canvas.delete("grid")
+        for x in range(0, GRID_WIDTH * GRID_SIZE, GRID_SIZE):
+            self.canvas.create_line(x, 0, x, GRID_HEIGHT * GRID_SIZE, fill="gray", tags="grid")
+        for y in range(0, GRID_HEIGHT * GRID_SIZE, GRID_SIZE):
+            self.canvas.create_line(0, y, GRID_WIDTH * GRID_SIZE, y, fill="gray", tags="grid")
+
+    def draw_snake(self):
+        self.canvas.delete("snake")
+        for segment in self.snake:
+            x, y = segment
+            self.canvas.create_rectangle(
+                x * GRID_SIZE,
+                y * GRID_SIZE,
+                (x + 1) * GRID_SIZE,
+                (y + 1) * GRID_SIZE,
+                fill="green",
+                tags="snake"
+            )
+
+    def draw_food(self):
+        x, y = self.food
+        self.canvas.create_oval(
+            x * GRID_SIZE,
+            y * GRID_SIZE,
+            (x + 1) * GRID_SIZE,
+            (y + 1) * GRID_SIZE,
+            fill="red",
+            tags="food"
+        )
+
+    def move_snake(self):
+        head_x, head_y = self.snake[0]
+        if self.direction == "Right":
+            new_head = (head_x + 1, head_y)
+        elif self.direction == "Left":
+            new_head = (head_x - 1, head_y)
+        elif self.direction == "Up":
+            new_head = (head_x, head_y - 1)
+        elif self.direction == "Down":
+            new_head = (head_x, head_y + 1)
+
+        self.snake.insert(0, new_head)
+
+        if new_head == self.food:
+            self.score += 1
+            self.food = self.create_food()
+            self.update_delay -= 5  # Increase game speed
+
+        else:
+            self.snake.pop()
+
+        if (
+            new_head in self.snake[1:]  # Check if snake runs into itself
+            or new_head[0] < 0
+            or new_head[0] >= GRID_WIDTH
+            or new_head[1] < 0
+            or new_head[1] >= GRID_HEIGHT
+        ):
+            self.is_game_over = True
+
+    def update(self):
+        if not self.is_game_over:
+            self.move_snake()
+            self.draw_grid()
+            self.draw_snake()
+            self.draw_food()
+            self.root.after(self.update_delay, self.update)
+        else:
+            self.canvas.create_text(
+                GRID_WIDTH * GRID_SIZE / 2,
+                GRID_HEIGHT * GRID_SIZE / 2,
+                text=f"Game Over\nScore: {self.score}",
+                fill="white",
+                font=("Helvetica", 24),
+                justify="center"
+            )
+
+    def on_key_press(self, event):
+        if event.keysym == "Right" and self.direction != "Left":
+            self.direction = "Right"
+        elif event.keysym == "Left" and self.direction != "Right":
+            self.direction = "Left"
+        elif event.keysym == "Up" and self.direction != "Down":
+            self.direction = "Up"
+        elif event.keysym == "Down" and self.direction != "Up":
+            self.direction = "Down"
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    game = SnakeGame(root)
+    root.mainloop()
